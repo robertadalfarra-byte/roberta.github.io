@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trail Navigation Apps — Competitive Analysis</title>
+<style>
+  :root{
+    --paper: #f2ecd9;
+    --paper-2: #ece4cc;
+    --ink: #23301f;
+    --ink-soft: #4a5640;
+    --contour: #c9bb95;
+    --contour-strong: #a9976a;
+    --rule: #b7a97b;
+
+    --alltrails: #2f6b3a;
+    --alltrails-bg: #e3ecdd;
+    --outdooractive: #1f5a66;
+    --outdooractive-bg: #dfe9ea;
+    --komoot: #a8481c;
+    --komoot-bg: #f2ddc9;
+
+    --danger: #8c2f22;
+    --danger-bg: #f4e0d8;
+
+    --radius: 3px;
+    --space-1: 8px;
+    --space-2: 16px;
+    --space-3: 24px;
+    --space-4: 40px;
+    --space-5: 64px;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(169,151,106,0.18), transparent 42%),
+      radial-gradient(circle at 88% 92%, rgba(169,151,106,0.15), transparent 45%),
+      var(--paper);
+    color:var(--ink);
+    font-family: "Iowan Old Style","Palatino Linotype", Palatino, Georgia, serif;
+    font-size:16px;
+    line-height:1.55;
+    padding: var(--space-4) var(--space-3) var(--space-5);
+  }
+
+  .wrap{ max-width:1180px; margin:0 auto; }
+
+  /* ---- Contour ring decoration ---- */
+  .contours{
+    position:relative;
+    height:0;
+  }
+  .contours svg{ position:absolute; opacity:0.5; pointer-events:none; }
+
+  /* ---- Header / masthead ---- */
+  header.masthead{
+    border-top: 3px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding: var(--space-2) 0 var(--space-3);
+    margin-bottom: var(--space-4);
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap: var(--space-2);
+  }
+  .masthead-eyebrow{
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size:12px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 6px;
+  }
+  h1{
+    font-size: clamp(28px, 4.2vw, 44px);
+    line-height:1.08;
+    margin:0;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .masthead-meta{
+    font-family: "Courier New", ui-monospace, monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    text-align:right;
+    line-height:1.6;
+  }
+  .masthead-meta strong{ color:var(--ink); }
+
+  h2.section-title{
+    display:flex;
+    align-items:center;
+    gap: var(--space-2);
+    font-size:13px;
+    font-family: "Courier New", ui-monospace, monospace;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color: var(--ink);
+    margin: var(--space-5) 0 var(--space-3);
+  }
+  h2.section-title .num{
+    color: var(--paper);
+    background: var(--ink);
+    width:26px; height:26px;
+    display:inline-flex; align-items:center; justify-content:center;
+    border-radius:50%;
+    font-size:12px;
+    flex:0 0 auto;
+  }
+  h2.section-title::after{
+    content:"";
+    flex:1 1 auto;
+    height:1px;
+    background: repeating-linear-gradient(90deg, var(--contour-strong) 0 6px, transparent 6px 12px);
+  }
+
+  /* ---- Legend / app key ---- */
+  .legend{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+  .legend-item{
+    display:flex; align-items:center; gap:10px;
+    padding: 10px 14px;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+  .swatch{ width:14px; height:14px; border-radius:50%; flex:0 0 auto; }
+  .swatch.at{ background: var(--alltrails); }
+  .swatch.oa{ background: var(--outdooractive); }
+  .swatch.km{ background: var(--komoot); }
+  .legend-item .name{ font-weight:700; font-size:14.5px; }
+  .legend-item .sub{ font-size:12px; color:var(--ink-soft); display:block; font-family:"Courier New",monospace; }
+
+  /* ---- Comparison table ---- */
+  .table-scroll{
+    overflow-x:auto;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--paper-2);
+  }
+  table.compare{
+    width:100%;
+    border-collapse:collapse;
+    min-width: 760px;
+  }
+  table.compare thead th{
+    text-align:left;
+    font-family:"Courier New", ui-monospace, monospace;
+    font-size:11.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    padding: 14px 18px;
+    border-bottom: 2px solid var(--ink);
+    color: var(--ink);
+    background: var(--paper);
+    position:sticky; top:0;
+  }
+  table.compare thead th:first-child{ width:15%; }
+  table.compare thead th.at{ color:var(--alltrails); }
+  table.compare thead th.oa{ color:var(--outdooractive); }
+  table.compare thead th.km{ color:var(--komoot); }
+
+  table.compare td{
+    padding: 16px 18px;
+    vertical-align:top;
+    border-bottom: 1px solid var(--rule);
+    font-size:14.5px;
+  }
+  table.compare tbody tr:last-child td{ border-bottom:none; }
+  table.compare td.dim{
+    font-weight:700;
+    font-family:"Courier New", ui-monospace, monospace;
+    font-size:12px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    color:var(--ink);
+    background: var(--paper);
+    white-space:nowrap;
+  }
+  table.compare td ul{ margin:0; padding-left:18px; }
+  table.compare td li{ margin-bottom:6px; }
+  table.compare td li:last-child{ margin-bottom:0; }
+  table.compare tbody tr:nth-child(even) td:not(.dim){ background: rgba(255,255,255,0.35); }
+
+  /* ---- Gap / risk callout ---- */
+  .callout{
+    border: 1px solid var(--danger);
+    background: var(--danger-bg);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+    margin-top: var(--space-2);
+  }
+  .callout .tag{
+    display:inline-block;
+    font-family:"Courier New",monospace;
+    font-size:11px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color: var(--danger);
+    border:1px solid var(--danger);
+    padding:3px 8px;
+    border-radius:20px;
+    margin-bottom:10px;
+  }
+  .callout h3{ margin: 0 0 8px; font-size:19px; }
+  .callout p{ margin:0 0 10px; }
+  .callout p:last-child{ margin-bottom:0; }
+
+  .split{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+  .card{
+    border:1px solid var(--rule);
+    background: var(--paper-2);
+    border-radius: var(--radius);
+    padding: var(--space-3);
+  }
+  .card h4{
+    margin:0 0 10px;
+    font-family:"Courier New",monospace;
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color: var(--ink-soft);
+  }
+  .card p{ margin:0; font-size:14.5px; }
+
+  /* ---- Recommendation / signature block ---- */
+  .rec{
+    margin-top: var(--space-3);
+    border: 2px solid var(--ink);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1)),
+      var(--paper-2);
+    position:relative;
+    overflow:hidden;
+  }
+  .rec::before{
+    content:"";
+    position:absolute; right:-40px; top:-40px;
+    width:180px; height:180px;
+    border-radius:50%;
+    border: 1px dashed var(--contour-strong);
+  }
+  .rec::after{
+    content:"";
+    position:absolute; right:-10px; top:-10px;
+    width:110px; height:110px;
+    border-radius:50%;
+    border: 1px dashed var(--contour-strong);
+  }
+  .rec-eyebrow{
+    font-family:"Courier New",monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color: var(--komoot);
+    margin:0 0 8px;
+  }
+  .rec h3{
+    font-size: clamp(22px, 3vw, 30px);
+    margin: 0 0 14px;
+    max-width: 720px;
+  }
+  .rec p{ max-width: 760px; margin:0 0 14px; font-size:15.5px; }
+  .rec-why{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+  .rec-why .item{
+    border-left: 3px solid var(--komoot);
+    padding-left: 12px;
+  }
+  .rec-why .item .k{
+    font-family:"Courier New",monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color: var(--komoot);
+    display:block;
+    margin-bottom:4px;
+  }
+  .rec-why .item p{ font-size:13.5px; margin:0; }
+
+  footer{
+    margin-top: var(--space-5);
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--rule);
+    font-family:"Courier New",monospace;
+    font-size:11.5px;
+    color: var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  @media (max-width: 760px){
+    .legend{ grid-template-columns: 1fr; }
+    .split{ grid-template-columns: 1fr; }
+    .rec-why{ grid-template-columns: 1fr; }
+    .masthead-meta{ text-align:left; }
+    header.masthead{ flex-direction:column; align-items:flex-start; }
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .card, .legend-item{ transition: transform 160ms ease, box-shadow 160ms ease; }
+    .card:hover, .legend-item:hover{ transform: translateY(-2px); box-shadow: 0 6px 16px rgba(35,48,31,0.12); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div>
+      <p class="masthead-eyebrow">Field Notes — Competitive Intelligence</p>
+      <h1>Trail Navigation Apps<br>Field Comparison</h1>
+    </div>
+    <div class="masthead-meta">
+      <div>Subjects: <strong>AllTrails · Outdooractive · Komoot</strong></div>
+      <div>Survey date: <strong>Aug 2026</strong></div>
+      <div>Prepared for: <strong>PM Review</strong></div>
+    </div>
+  </header>
+
+  <h2 class="section-title"><span class="num">1</span>Legend</h2>
+  <div class="legend">
+    <div class="legend-item">
+      <span class="swatch at"></span>
+      <span><span class="name">AllTrails</span><span class="sub">discovery-first · US-strong</span></span>
+    </div>
+    <div class="legend-item">
+      <span class="swatch oa"></span>
+      <span><span class="name">Outdooractive</span><span class="sub">B2B2C tourism platform</span></span>
+    </div>
+    <div class="legend-item">
+      <span class="swatch km"></span>
+      <span><span class="name">Komoot</span><span class="sub">routing-first · EU-strong</span></span>
+    </div>
+  </div>
+
+  <h2 class="section-title"><span class="num">2</span>Comparison Table</h2>
+  <div class="table-scroll">
+    <table class="compare">
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th class="at">AllTrails</th>
+          <th class="oa">Outdooractive</th>
+          <th class="km">Komoot</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="dim">Core&nbsp;Features</td>
+          <td>
+            <ul>
+              <li>450,000+ crowd-verified trails</li>
+              <li>AI plant/insect ID (Peak tier)</li>
+              <li>Trail-busyness heatmaps</li>
+              <li>Accessibility filters (dog/kid/wheelchair)</li>
+            </ul>
+          </td>
+          <td>
+            <ul>
+              <li>Best-in-class topo & vector maps</li>
+              <li>Ordnance Survey layer option</li>
+              <li>Safety contacts & tracker beacon</li>
+              <li>White-label app/web platform for DMOs</li>
+            </ul>
+          </td>
+          <td>
+            <ul>
+              <li>Strongest multi-sport route planner</li>
+              <li>Elevation + surface-type accuracy</li>
+              <li>Turn-by-turn nav for complex junctions</li>
+              <li>"Highlights" waypoint layer</li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td class="dim">UX&nbsp;&amp;&nbsp;Design</td>
+          <td>Clean, browse-and-search first. Easiest app for a first-time user finding a specific nearby trail.</td>
+          <td>Powerful but dense — a "pro tool" feel. Excellent layers, steeper learning curve than a pure consumer app.</td>
+          <td>Praised for casual use and sharing adventures; some reviewers find full route-planning control less intuitive.</td>
+        </tr>
+        <tr>
+          <td class="dim">Target&nbsp;User</td>
+          <td>Mass-market hikers, trail runners, casual walkers — US-heavy, expanding to urban &amp; corporate wellness segments.</td>
+          <td>Technical/alpine hikers who want precision mapping, plus B2B buyers (tourism boards, publishers, alpine clubs).</td>
+          <td>European multi-sport enthusiasts — cyclists, bikepackers, hikers who prioritize route planning over discovery.</td>
+        </tr>
+        <tr>
+          <td class="dim">Business&nbsp;Model</td>
+          <td>Freemium subscription core (AllTrails+/Peak) + corporate wellness B2B + affiliate commerce + early trail-data licensing pilots.</td>
+          <td>Primarily B2B2C — white-label platform sold to DMOs/publishers, revenue-share on subscriptions &amp; ads sold through partner channels.</td>
+          <td>Historically one-time map purchases + optional Premium. Shifting hard to subscription-only under new ownership.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="section-title"><span class="num">3</span>Where Komoot Is Losing Ground</h2>
+  <div class="split">
+    <div class="card">
+      <h4>Feature-level gap (smaller factor)</h4>
+      <p>AllTrails wins on trust-through-community — fresh photos and condition reports, strongest in the US/AU/NZ where Komoot's coverage thins. Outdooractive wins on technical/safety credibility for alpine, off-path terrain.</p>
+    </div>
+    <div class="card">
+      <h4>Trend</h4>
+      <p>These gaps are real but stable — they haven't shifted sharply in the last year. The acceleration in defections traces to a single event, below.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="tag">Bigger Factor · Self-inflicted</span>
+    <h3>The Bending Spoons acquisition (2025)</h3>
+    <p>Komoot was bought by Bending Spoons, a firm known for cutting staff and raising prices post-acquisition (Evernote, WeTransfer, Meetup). Roughly 85% of Komoot's ~150-person team was let go within weeks. Shortly before, a previously-bundled feature — device sync via a one-time map purchase — was moved behind a mandatory Premium subscription for new users.</p>
+    <p>The result: visible community backlash, "enshittification" accusations, and concern over AI training on user data. For a trust-and-community product, this is a bigger threat than any feature gap with AllTrails or Outdooractive.</p>
+  </div>
+
+  <h2 class="section-title"><span class="num">4</span>The One Feature to Build</h2>
+  <div class="rec">
+    <p class="rec-eyebrow">If I were PM at Komoot</p>
+    <h3>A live Trail Conditions layer, fused directly into route planning — "Komoot Pulse"</h3>
+    <p>Surface real-time condition reports — surface state, water crossings, closures, recent photos — at the exact waypoint or segment a user is routing through, built on Komoot's existing Highlights infrastructure and paired with its superior elevation/surface data. Not a bolt-on social feed to browse; trustworthy conditions exactly where you're navigating.</p>
+    <p>Ship it alongside a public commitment that this community data is never used for AI training and stays free for existing users — turning a defensive trust problem into a product feature with a message: <em>investing in the community, not extracting from it.</em></p>
+    <div class="rec-why">
+      <div class="item">
+        <span class="k">Attacks the real gap</span>
+        <p>Targets the #1 reason users defect to AllTrails — trust and freshness signals — head-on.</p>
+      </div>
+      <div class="item">
+        <span class="k">Plays to strength</span>
+        <p>Layers onto Komoot's actual differentiator, routing intelligence, rather than copying AllTrails' UI.</p>
+      </div>
+      <div class="item">
+        <span class="k">Rebuilds trust</span>
+        <p>Directly counters the Bending Spoons pricing backlash with a visible pro-community commitment.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Trail Navigation Apps — Competitive Field Notes</span>
+    <span>Sources: app review coverage, company pricing pages, trade press (2025–2026)</span>
+  </footer>
+
+</div>
+</body>
+</html>
